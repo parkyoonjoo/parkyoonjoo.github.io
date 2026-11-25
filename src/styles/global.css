@@ -1,0 +1,81 @@
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/700.css';
+@import '@fontsource/jetbrains-mono/800.css';
+
+:root {
+  --bg: #000;
+  --fg: #fff;
+  --fg-muted: rgba(255, 255, 255, 0.65);
+  --font: 'JetBrains Mono', ui-monospace, monospace;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: #fff;
+  color: #000;
+}
+
+:focus-visible {
+  outline: 1px solid #fff;
+  outline-offset: 3px;
+}
+
+a {
+  color: inherit;
+}
+
+/* 고정 이니셜: 무대가 아니라 뷰포트 상단에 붙는다 */
+.initials {
+  position: fixed;
+  /* 아이폰 노치·다이내믹 아일랜드: 안전 영역이 있으면 그만큼 더 내려온다 */
+  top: max(20px, calc(env(safe-area-inset-top, 0px) + 10px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--fg);
+  text-decoration: none;
+  line-height: 1;
+  padding: 8px 10px;
+}
+
+/* 휴대폰: 이니셜을 조금 더 아래로 */
+@media (max-width: 600px) {
+  .initials {
+    top: max(30px, calc(env(safe-area-inset-top, 0px) + 12px));
+  }
+}
+
+/* 움직임 줄이기: 상세 페이지의 작은 전환(썸네일 확대, 밑줄, 버튼 눌림)도 끈다 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+  .feed-item:hover img,
+  .work-row:hover .work-thumb,
+  .filter:active {
+    transform: none !important;
+  }
+}

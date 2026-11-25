@@ -1,0 +1,91 @@
+{
+  "canvas": {
+    "width": 1716,
+    "height": 1097
+  },
+  "grid": {
+    "cell_w": 8,
+    "cell_h": 13,
+    "cols": 214,
+    "rows": 84,
+    "files": [
+      "ascii-human.txt",
+      "ascii-robot.txt"
+    ],
+    "note": "Each .txt is the full grid (rows x cols) for that hand; spaces are empty. Render as monospace text, hands layer ABOVE the words."
+  },
+  "letters": {
+    "Y": {
+      "col": 78,
+      "row": 32,
+      "label": "Yoonjoo",
+      "route": "/about"
+    },
+    "D": {
+      "col": 59,
+      "row": 36,
+      "label": "Drawn with Light",
+      "route": "/drawn-with-light"
+    },
+    "W": {
+      "col": 135,
+      "row": 39,
+      "label": "Work",
+      "route": "/work"
+    },
+    "P": {
+      "col": 154,
+      "row": 41,
+      "label": "Publications",
+      "route": "/publications"
+    }
+  },
+  "contact_point": {
+    "x": 858,
+    "y": 552,
+    "note": "horizontal centre of the canvas"
+  },
+  "sparkle": {
+    "file": "sparkle-cells.json",
+    "rotation_deg_clockwise": 30,
+    "note": "ASCII cells around contact_point; reveal in order of dist_px, then stop"
+  },
+  "hand_split_x": 858,
+  "words": [
+    {
+      "text": "drawing",
+      "x_pct": 0.06,
+      "y_pct": 0.271,
+      "order": 1,
+      "layer": "below hands"
+    },
+    {
+      "text": "people",
+      "x_pct": 0.17,
+      "y_pct": 0.645,
+      "order": 2,
+      "layer": "below hands"
+    },
+    {
+      "text": "and",
+      "x_pct": 0.36,
+      "y_pct": 0.85,
+      "order": 3,
+      "layer": "below hands"
+    },
+    {
+      "text": "machines",
+      "x_pct": 0.53,
+      "y_pct": 0.765,
+      "order": 4,
+      "layer": "below hands"
+    },
+    {
+      "text": "closer",
+      "x_pct": 0.8,
+      "y_pct": 0.555,
+      "order": 5,
+      "layer": "below hands"
+    }
+  ]
+}

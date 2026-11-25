@@ -1,0 +1,27 @@
+{
+  "_note": "홈 화면 Y·D·W·P 미리보기 박스의 대표 사진. image는 public 폴더 기준 경로. ratio는 사진 비율(가로:세로)이고 박스도 이 비율을 따른다.",
+  "Y": {
+    "title": "Yoonjoo",
+    "image": "/images/previews/y.webp",
+    "ratio": "4:3",
+    "alt": "Yoonjoo Park"
+  },
+  "D": {
+    "title": "Drawn with Light",
+    "image": "/images/previews/d.webp",
+    "ratio": "4:3",
+    "alt": "Film self-portrait in a mirror, taken with a flash"
+  },
+  "W": {
+    "title": "Work",
+    "image": "/images/previews/w.webp",
+    "ratio": "3:4",
+    "alt": "Work preview"
+  },
+  "P": {
+    "title": "Publications",
+    "image": "/images/previews/p.webp",
+    "ratio": "3:4",
+    "alt": "Publications preview"
+  }
+}

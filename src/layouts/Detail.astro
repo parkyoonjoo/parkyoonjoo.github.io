@@ -1,0 +1,88 @@
+---
+import Base from './Base.astro';
+import { u, sections, type SectionKey } from '../lib/url';
+
+interface Props {
+  title: string;
+  section: SectionKey;
+  description?: string;
+}
+const { title, section, description } = Astro.props;
+const others = sections.filter((s) => s.key !== section);
+---
+
+<Base title={`${title} · YJ.Park`} description={description}>
+  <!-- 누르면 홈의 최종 상태(손이 맞닿은 상태)로. 스크롤 장면은 다시 재생하지 않는다 -->
+  <a class="initials" href={u('/?state=final')} aria-label="YJ.Park: back to home">YJ.Park</a>
+
+  <main class="detail">
+    <slot />
+  </main>
+
+  <nav class="detail-footer" aria-label="Other sections">
+    {others.map((s) => <a class="text-link" href={u(s.href)}>{s.label}</a>)}
+  </nav>
+</Base>
+
+<style is:global>
+  .detail {
+    width: min(1080px, 100% - 64px);
+    margin: 0 auto;
+    padding: 120px 0 72px;
+  }
+
+  .detail-footer {
+    width: min(1080px, 100% - 64px);
+    margin: 0 auto;
+    padding: 28px 0 48px;
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+    font-size: 13px;
+  }
+
+  .page-title {
+    margin: 0 0 40px;
+    font-size: clamp(28px, 3.2vw, 44px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+
+  .muted {
+    color: var(--fg-muted);
+  }
+
+  /* 텍스트 링크: 밑줄이 그려지는 정도의 조용한 반응 */
+  .text-link {
+    color: #fff;
+    text-decoration: none;
+    background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+    padding-bottom: 2px;
+    transition: background-size 200ms var(--ease-out);
+  }
+
+  .text-link:hover,
+  .text-link:focus-visible {
+    background-size: 100% 1px;
+  }
+
+  .initials:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  @media (max-width: 640px) {
+    .detail {
+      width: calc(100% - 40px);
+      padding-top: 96px;
+    }
+    .detail-footer {
+      width: calc(100% - 40px);
+    }
+    .detail-footer a {
+      padding: 12px 0;
+    }
+  }
+</style>

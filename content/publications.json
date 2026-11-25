@@ -1,0 +1,17 @@
+{
+  "_note": "papers = 논문, posters = 포스터 발표. 목록이 비어 있으면 'In preparation.'으로 나온다.",
+  "papers": [],
+  "posters": [
+    {
+      "title": "Design and Performance Evaluation of a Conformable Patch for Blood Pressure Monitoring Using a PPG-Ultrasound Fusion Sensor",
+      "authors": "Jungwon Choi, Kyuwon Park, Yoonjoo Park, Youree Jeong, Jaesok Yu",
+      "venue": "World Engineering Education Forum & Global Engineering Deans Council Annual Conference (WEEF & GEDC 2025)",
+      "venueUrl": "https://weefgedc2025.org/",
+      "location": "Daegu, Korea",
+      "month": "Sep",
+      "year": 2025,
+      "pdf": "/publications/2025-weef-gedc-poster.pdf",
+      "thumb": "/publications/2025-weef-gedc-poster.webp"
+    }
+  ]
+}

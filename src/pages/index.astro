@@ -1,0 +1,736 @@
+---
+import Base from '../layouts/Base.astro';
+import layout from '../../assets/layout.json';
+import sparkleCells from '../../assets/sparkle-cells.json';
+import previews from '../../content/previews.json';
+
+const { canvas, grid, words, letters, contact_point } = layout;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+// 사람 손 글자(Y, D)와 로봇 손 글자(W, P)
+const humanLetters = ['Y', 'D'];
+const letterAria: Record<string, string> = {
+  Y: 'Yoonjoo: about',
+  D: 'Drawn with Light: film photographs',
+  W: 'Work: projects',
+  P: 'Publications',
+};
+
+// 글자마다 다른 타이밍: 깜빡임 위상(엇박자)과 별처럼 반짝하는 주기(4~6초)
+const glyphTiming: Record<string, { blink: number; twDur: number; twDelay: number }> = {
+  Y: { blink: 0, twDur: 4.4, twDelay: 1.1 },
+  D: { blink: -1.3, twDur: 5.6, twDelay: 3.0 },
+  W: { blink: -0.7, twDur: 4.9, twDelay: 0.4 },
+  P: { blink: -2.0, twDur: 5.3, twDelay: 2.2 },
+};
+
+// 휴대폰 세로 화면용 단어 위치 (무대 좌표 px, 왼쪽 끝 x / 세로 가운데 y).
+// 휴대폰에서는 손이 닿는 지점 주변 가로 약 960px(378~1338)만 보이므로 손 위아래 빈 곳에 놓는다.
+// 노트북 화면은 assets/layout.json 위치 그대로.
+const PHONE_WORDS: Record<string, { x: number; y: number }> = {
+  // 본인 스케치 기준: drawing은 사람 손 위(g가 손에 살짝 걸림), 나머지 넷은 손 아래에 흩어지게
+  drawing: { x: 520, y: 332 },
+  people: { x: 472, y: 754 },
+  closer: { x: 1000, y: 806 },
+  machines: { x: 757, y: 890 },
+  and: { x: 632, y: 1030 },
+};
+
+// 단어마다 다른 크기 (무대 기준 px, 기본 64px).
+// closer(핵심) 가장 크게, drawing(첫 단어·본인) 다음, people·machines는 같은 크기(동등한 쌍), and는 작게
+const WORD_SIZE: Record<string, number> = {
+  drawing: 76,
+  people: 64,
+  and: 40,
+  machines: 64,
+  closer: 86,
+};
+
+// 크기를 키운 단어가 손에 너무 가리지 않도록 노트북 위치를 살짝 옮김 (무대 px, layout.json 기준에서 더함)
+const WORD_NUDGE: Record<string, { dx: number; dy: number }> = {
+  closer: { dx: -34, dy: 12 },
+};
+
+// Y·D·W·P 미리보기 (content/previews.json)
+const previewKeys = ['Y', 'D', 'W', 'P'] as const;
+// 사진 비율 (content/previews.json 의 ratio, 예: "4:3"). 박스도 이 비율로
+const ratioOf = (k: (typeof previewKeys)[number]) => {
+  const [w, h] = String((previews[k] as { ratio?: string }).ratio ?? '4:3').split(':').map(Number);
+  return { w: w || 4, h: h || 3 };
+};
+
+// 반짝이는 dist_px 순서대로 켜지므로 정렬해 둔다
+const cells = [...sparkleCells].sort((a, b) => a.dist_px - b.dist_px);
+---
+
+<Base>
+  <!-- 홈에서는 클릭해도 아무 동작 없음 (상세 페이지에서는 홈 최종 상태로 가는 링크) -->
+  <p class="initials" data-home-initials>YJ.Park</p>
+
+  <main class="home" data-home>
+    <div class="viewport">
+      <!-- ⓪ 맨 아래 레이어: 점 별 + 별똥별 (배경 단어·손·반짝이보다 모두 뒤) -->
+      <canvas class="sky" data-sky aria-hidden="true"></canvas>
+      <div
+        class="stage"
+        data-stage
+        style={`--stage-w:${canvas.width}px;--stage-h:${canvas.height}px;--cw:${grid.cell_w}px;--ch:${grid.cell_h}px;`}
+      >
+        <!-- ① 배경 단어: 손 뒤 레이어 -->
+        <p class="words" aria-label="Drawing people and machines closer.">
+          {
+            words.map((w) => (
+              <span
+                class="word"
+                data-word={w.order}
+                aria-hidden="true"
+                style={`--x:${(w.x_pct * canvas.width + (WORD_NUDGE[w.text]?.dx ?? 0)).toFixed(1)}px;--y:${(w.y_pct * canvas.height + (WORD_NUDGE[w.text]?.dy ?? 0)).toFixed(1)}px;--px:${PHONE_WORDS[w.text].x}px;--py:${PHONE_WORDS[w.text].y}px;--fs:${WORD_SIZE[w.text]}px;`}
+              >
+                {w.text}
+              </span>
+            ))
+          }
+        </p>
+
+        <!-- ② ASCII 손 두 장: 각자 한 덩어리로 움직인다 -->
+        {
+          (['human', 'robot'] as const).map((hand) => (
+            <div class={`hand hand--${hand}`} data-hand={hand}>
+              <canvas class="hand-canvas" data-hand-canvas={hand} aria-hidden="true" />
+              <canvas class="hand-canvas" data-shimmer-canvas={hand} aria-hidden="true" />
+              {Object.entries(letters)
+                .filter(([k]) => (hand === 'human' ? humanLetters.includes(k) : !humanLetters.includes(k)))
+                .map(([k, v]) => (
+                  <a
+                    class="glyph"
+                    href={`${base}${v.route}`}
+                    aria-label={letterAria[k]}
+                    data-letter={k}
+                    data-preview-trigger={k}
+                    style={`left:${v.col * grid.cell_w}px;top:${v.row * grid.cell_h}px;--blink-delay:${glyphTiming[k].blink}s;--tw-dur:${glyphTiming[k].twDur}s;--tw-delay:${glyphTiming[k].twDelay}s;`}
+                  >
+                    <span aria-hidden="true">{k}</span>
+                  </a>
+                ))}
+            </div>
+          ))
+        }
+
+        <!-- ③ ASCII 반짝이: 닿은 지점 -->
+        <div class="sparkle" data-sparkle>
+          <div class="sparkle-cells" aria-hidden="true">
+            {
+              cells.map((c, i) => (
+                <span
+                  class="sparkle-cell"
+                  data-i={i}
+                  style={`left:${c.col * grid.cell_w}px;top:${c.row * grid.cell_h}px;--d:${Math.round(c.dist_px * 5.5)}ms;`}
+                >
+                  {c.char}
+                </span>
+              ))
+            }
+          </div>
+          <div
+            class="sparkle-glow"
+            aria-hidden="true"
+            style={`left:${contact_point.x}px;top:${contact_point.y}px;`}
+          />
+          <button
+            class="sparkle-hit"
+            type="button"
+            aria-label="Vision"
+            aria-controls="vision-box"
+            aria-expanded="false"
+            data-vision-trigger
+            style={`left:${contact_point.x}px;top:${contact_point.y}px;`}
+          />
+        </div>
+      </div>
+
+      <!-- 4-4 비전 박스: 반짝이에 커서를 올리면 -->
+      <section class="box vision-box" id="vision-box" data-vision-box aria-label="Vision" hidden>
+        <p class="vision-label">VISION</p>
+        <p class="vision-main">Drawing people and machines closer.</p>
+        <p class="vision-about">I've drawn. I'm drawing. I'll draw.</p>
+        <p class="vision-sub">in pencil · in robots · where the two meet</p>
+        <p class="vision-para">
+          Today, we use machines. I want a future where we live with them.{' '}<br />
+          I'm building toward robots that understand a touch, a feeling, a person,{' '}<br />
+          so they become companions, not just tools.
+        </p>
+      </section>
+
+      <!-- 4-5 미리보기 박스: Y·D·W·P에 커서를 올리면 (사진은 미리 불러 둔다) -->
+      {
+        previewKeys.map((k) => (
+          <div
+            class="box preview-box"
+            data-preview-box={k}
+            data-shape={ratioOf(k).w >= ratioOf(k).h ? 'landscape' : 'portrait'}
+            style={`--ratio: ${ratioOf(k).w} / ${ratioOf(k).h}`}
+            hidden
+          >
+            <img
+              class="preview-img"
+              src={`${base}${previews[k].image}`}
+              alt={previews[k].alt}
+              loading="eager"
+              decoding="async"
+              width={ratioOf(k).w * 275}
+              height={ratioOf(k).h * 275}
+            />
+            <p class="preview-title" aria-hidden="true">
+              <span class="preview-typed" data-typed data-full={previews[k].title} />
+              <span class="type-cursor">|</span>
+            </p>
+          </div>
+        ))
+      }
+    </div>
+  </main>
+
+  <script>
+    import { initStage } from '../scripts/stage';
+    import { initBoxes } from '../scripts/boxes';
+    import { initSky } from '../scripts/sky';
+    initSky();
+    initStage();
+    initBoxes();
+  </script>
+</Base>
+
+<style>
+  /* 홈: 화면 하나짜리 무대를 sticky로 붙여 두고, 그 아래 175vh 분량의 스크롤로 장면을 재생한다 */
+  .home {
+    position: relative;
+    --scene-len: 175vh;
+    height: calc(100vh + var(--scene-len));
+    height: calc(100svh + var(--scene-len));
+  }
+
+  /* 최종 상태로 바로 보여 줄 때 (?state=final, 움직임 줄이기): 스크롤 없음 */
+  .home.is-final {
+    --scene-len: 0px;
+  }
+
+  .viewport {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  .sky {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    pointer-events: none;
+  }
+
+  .stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--stage-w);
+    height: var(--stage-h);
+    transform-origin: 0 0;
+    /* 스크립트가 크기를 정하기 전에는 숨겨 두어 깜빡임을 막는다 */
+    visibility: hidden;
+  }
+
+  .stage.is-ready {
+    visibility: visible;
+  }
+
+  /* ① 배경 단어 */
+  .words {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    z-index: 1;
+  }
+
+  .word {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    font-size: var(--fs, 64px);
+    line-height: 1;
+    font-weight: 400;
+    color: #fff;
+    white-space: nowrap;
+    letter-spacing: 0;
+    /* 나타나기 전: 투명 + 24px 아래. 다섯 단어 모두 같은 방식으로 아래에서 위로 */
+    opacity: 0;
+    transform: translateY(calc(-50% + 24px));
+    transition:
+      opacity 260ms var(--ease-out),
+      transform 280ms var(--ease-out);
+  }
+
+  .word.is-on {
+    opacity: 1;
+    transform: translateY(-50%);
+  }
+
+  /* 휴대폰 세로 화면: 손 위아래로 다시 배치 */
+  .stage[data-layout='phone'] .word {
+    left: var(--px);
+    top: var(--py);
+  }
+
+  /* ② 손 */
+  .hand {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--stage-w);
+    height: var(--stage-h);
+    z-index: 2;
+    will-change: transform;
+    pointer-events: none;
+  }
+
+  .hand-canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--stage-w);
+    height: var(--stage-h);
+  }
+
+  /* Y·D·W·P: 격자 한 칸에 섞여 있는 한 글자
+     강도는 무대의 data-glyph(weak | mid | strong)로 고른다. 주변 칸 어둡게 하기는 stage.ts에서. */
+  .stage {
+    --g-size: 14px; /* 주변 글자 12px 기준 배율 */
+    --g-o-min: 0.84;
+    --g-glow-min: 10px;
+    --g-glow-max: 14px;
+    --g-glow-a: 0.5;
+    --tw-size: 22px;
+    --tw-a: 0.55;
+    --tw-ray: 0;
+  }
+  .stage[data-glyph='weak'] {
+    --g-size: 14px; /* 1.15배 */
+    --g-o-min: 0.78;
+    --g-glow-min: 10px;
+    --g-glow-max: 15px;
+    --g-glow-a: 0.5;
+    --tw-size: 22px;
+    --tw-a: 0.5;
+    --tw-ray: 0;
+  }
+  .stage[data-glyph='mid'] {
+    --g-size: 14.75px; /* 약 1.23배 */
+    --g-o-min: 0.84;
+    --g-glow-min: 10px;
+    --g-glow-max: 20px;
+    --g-glow-a: 0.65;
+    --tw-size: 30px;
+    --tw-a: 0.7;
+    --tw-ray: 0.55;
+  }
+  /* 중간과 강하게 사이 (현재 기본값) */
+  .stage[data-glyph='between'] {
+    --g-size: 15.1px; /* 약 1.26배 */
+    --g-o-min: 0.86;
+    --g-glow-min: 11px;
+    --g-glow-max: 21px;
+    --g-glow-a: 0.72;
+    --tw-size: 35px;
+    --tw-a: 0.8;
+    --tw-ray: 0.7;
+  }
+  .stage[data-glyph='strong'] {
+    --g-size: 15.5px; /* 약 1.3배 */
+    --g-o-min: 0.88;
+    --g-glow-min: 12px;
+    --g-glow-max: 22px;
+    --g-glow-a: 0.8;
+    --tw-size: 40px;
+    --tw-a: 0.9;
+    --tw-ray: 0.85;
+  }
+
+  .glyph {
+    position: absolute;
+    width: var(--cw);
+    height: var(--ch);
+    display: grid;
+    place-items: center;
+    color: #fff;
+    text-decoration: none;
+    pointer-events: auto;
+  }
+
+  .glyph span {
+    position: relative;
+    z-index: 1;
+    font-size: var(--g-size);
+    line-height: 1;
+    font-weight: 700;
+    /* 깜빡임: 투명도와 빛 번짐이 함께 커졌다 작아진다 */
+    animation: glyph-pulse 2.8s ease-in-out var(--blink-delay, 0s) infinite;
+  }
+
+  @keyframes glyph-pulse {
+    0%,
+    100% {
+      opacity: 1;
+      text-shadow:
+        0 0 3px rgba(255, 255, 255, 0.95),
+        0 0 var(--g-glow-max) rgba(255, 255, 255, var(--g-glow-a));
+    }
+    50% {
+      opacity: var(--g-o-min);
+      text-shadow:
+        0 0 2px rgba(255, 255, 255, 0.7),
+        0 0 var(--g-glow-min) rgba(255, 255, 255, calc(var(--g-glow-a) * 0.6));
+    }
+  }
+
+  /* 별처럼 한 번 반짝: 글자마다 4~6초에 한 번, 짧게 */
+  .glyph::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: var(--tw-size);
+    height: var(--tw-size);
+    margin: calc(var(--tw-size) / -2) 0 0 calc(var(--tw-size) / -2);
+    pointer-events: none;
+    opacity: 0;
+    background:
+      /* 가로·세로 가는 빛줄기 */
+      linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, var(--tw-ray)) 50%, transparent 100%) center / 100% 1px no-repeat,
+      linear-gradient(0deg, transparent 0%, rgba(255, 255, 255, var(--tw-ray)) 50%, transparent 100%) center / 1px 100% no-repeat,
+      radial-gradient(circle, rgba(255, 255, 255, var(--tw-a)) 0%, rgba(255, 255, 255, 0) 45%);
+    mix-blend-mode: screen;
+    animation: glyph-twinkle var(--tw-dur, 5s) linear var(--tw-delay, 0s) infinite;
+  }
+
+  @keyframes glyph-twinkle {
+    0%,
+    86% {
+      opacity: 0;
+      transform: scale(0.6) rotate(0deg);
+    }
+    90% {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+    96%,
+    100% {
+      opacity: 0;
+      transform: scale(0.8) rotate(0deg);
+    }
+  }
+
+  /* 투명한 히트 영역: 화면에서 최소 32px (터치는 44px) */
+  .glyph::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: calc(32px * var(--inv-s, 1));
+    height: calc(32px * var(--inv-s, 1));
+    transform: translate(-50%, -50%);
+  }
+
+  @media (hover: none) {
+    .glyph::before {
+      width: calc(44px * var(--inv-s, 1));
+      height: calc(44px * var(--inv-s, 1));
+      /* 휴대폰에서는 Y–D, W–P가 약 35px 거리라 44px 탭 영역이 겹친다.
+         글자는 그대로 두고 탭 영역만 서로 반대쪽으로 5px씩 비켜 놓아 겹치지 않게 */
+      transform: translate(calc(-50% + var(--hit-dx, 0px) * var(--inv-s, 1)), -50%);
+    }
+    .glyph[data-letter='Y'],
+    .glyph[data-letter='P'] {
+      --hit-dx: 5px;
+    }
+    .glyph[data-letter='D'],
+    .glyph[data-letter='W'] {
+      --hit-dx: -5px;
+    }
+  }
+
+  .glyph:focus-visible {
+    outline: none;
+  }
+
+  .glyph:focus-visible span {
+    outline: 1px solid #fff;
+    outline-offset: 3px;
+  }
+
+  /* ③ 반짝이 */
+  .sparkle {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .sparkle-glow {
+    position: absolute;
+    width: 190px;
+    height: 190px;
+    margin: -95px 0 0 -95px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.18) 35%, rgba(255, 255, 255, 0) 68%);
+    filter: blur(10px);
+    /* 칸의 검은 배경이 상자로 보이지 않도록 빛을 글자 위에 '더하기'로 얹는다 */
+    mix-blend-mode: screen;
+  }
+
+  .sparkle-cell {
+    position: absolute;
+    width: var(--cw);
+    height: var(--ch);
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    line-height: 1;
+    font-weight: 700;
+    color: #fff;
+    background: #000;
+  }
+
+  /* 반짝이 등장: 닿는 순간 중심 칸부터 dist_px 순서로 바깥 칸이 켜지고, 목업 크기에서 멈춘다 */
+  .sparkle-cell {
+    opacity: 0;
+    transition: opacity 90ms linear;
+  }
+
+  .sparkle.is-lit .sparkle-cell {
+    opacity: 1;
+    transition-delay: var(--d, 0ms);
+  }
+
+  .sparkle-glow {
+    opacity: 0;
+    transform: scale(0.55);
+    transition:
+      opacity 200ms ease-out,
+      transform 200ms ease-out;
+  }
+
+  .sparkle.is-lit .sparkle-glow {
+    opacity: 1;
+    transform: scale(1);
+    transition:
+      opacity 520ms var(--ease-out),
+      transform 560ms var(--ease-out);
+  }
+
+  /* 빛이 켜지기 전에는 비전 박스용 영역도 비활성 */
+  .sparkle:not(.is-lit) .sparkle-hit {
+    visibility: hidden;
+  }
+
+  /* 처음 그릴 때(최종 상태로 바로 시작 등)는 전환 효과 없이 */
+  .stage.no-anim .word,
+  .stage.no-anim .sparkle-cell,
+  .stage.no-anim .sparkle-glow {
+    transition: none !important;
+  }
+
+  .sparkle-hit {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    margin: -60px 0 0 -60px;
+    border: 0;
+    padding: 0;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
+  .sparkle-hit:focus-visible {
+    outline: 1px solid rgba(255, 255, 255, 0.6);
+    outline-offset: 0;
+  }
+
+  /* ── 박스 공통: 흰색 30% + 1px 흰 테두리, 각진 모서리 ── */
+  .box {
+    position: absolute;
+    left: var(--box-x, 50%);
+    top: var(--box-y, 50%);
+    z-index: 10;
+    margin: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border: 1px solid #fff;
+    border-radius: 0;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    color: #fff;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.97);
+    transition:
+      opacity 120ms ease-out,
+      transform 120ms ease-out;
+  }
+
+  .box[hidden] {
+    display: block;
+    visibility: hidden;
+  }
+
+  .box.is-open {
+    visibility: visible;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    transition:
+      opacity 180ms var(--ease-out),
+      transform 200ms var(--ease-out);
+  }
+
+  /* 비전 박스 */
+  .vision-box {
+    width: min(clamp(380px, 50vw, 760px), 100vw - 32px);
+    padding: 26px 30px 28px;
+  }
+
+  .vision-box p {
+    margin: 0;
+  }
+
+  .vision-label {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: rgba(255, 255, 255, 0.75);
+    margin-bottom: 14px !important;
+  }
+
+  /* 가장 크게, 가장 굵게 */
+  .vision-main {
+    font-size: clamp(22px, 2.05vw, 32px);
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    margin-bottom: 18px !important;
+  }
+
+  /* 강조: 아래 문단보다 확실히 크게 */
+  .vision-about {
+    font-size: clamp(17px, 1.45vw, 21px);
+    line-height: 1.35;
+    color: #fff;
+    margin-bottom: 6px !important;
+  }
+
+  /* 부제목: 연하게 */
+  .vision-sub {
+    font-size: 13px;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 22px !important;
+  }
+
+  /* 비전 문단: 가장 작게 */
+  .vision-para {
+    font-size: 13px;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  @media (max-width: 520px) {
+    .vision-box {
+      padding: 20px 20px 22px;
+    }
+    .vision-main {
+      font-size: 19px;
+    }
+    .vision-about {
+      font-size: 15px;
+    }
+    .vision-para {
+      font-size: 12px;
+    }
+    .vision-para br {
+      display: none;
+    }
+  }
+
+  /* 미리보기 박스: 사진이 꽉 차게, 오른쪽 위에 섹션 이름 */
+  /* 박스 비율 = 사진 비율 (previews.json 의 ratio). 가로 사진은 넓게, 세로 사진은 좁고 길게 */
+  .preview-box {
+    width: clamp(240px, 24vw, 400px);
+    aspect-ratio: var(--ratio, 4 / 3);
+    padding: 0;
+    overflow: hidden;
+    pointer-events: none; /* 박스가 글자를 덮어도 hover가 끊기지 않게 */
+  }
+
+  .preview-box[data-shape='portrait'] {
+    width: clamp(180px, 16.5vw, 280px);
+  }
+
+  .preview-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .preview-title {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    margin: 0;
+    padding: 4px 6px;
+    font-size: 14px;
+    line-height: 1.2;
+    white-space: nowrap;
+    background: rgba(0, 0, 0, 0.55);
+  }
+
+  .type-cursor {
+    display: inline-block;
+    margin-left: 1px;
+    animation: cursor-blink 1s steps(1) infinite;
+  }
+
+  @keyframes cursor-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .box,
+    .box.is-open {
+      transition: none;
+      transform: translate(-50%, -50%);
+    }
+    .type-cursor {
+      animation: none;
+    }
+
+    .word,
+    .sparkle-cell,
+    .sparkle-glow {
+      transition: none !important;
+    }
+
+    .glyph span {
+      animation: none;
+      text-shadow:
+        0 0 3px rgba(255, 255, 255, 0.95),
+        0 0 var(--g-glow-max) rgba(255, 255, 255, var(--g-glow-a));
+    }
+    .glyph::after {
+      animation: none;
+      opacity: 0;
+    }
+  }
+</style>

@@ -1,0 +1,160 @@
+---
+import { getCollection, render } from 'astro:content';
+import Detail from '../../layouts/Detail.astro';
+import { u } from '../../lib/url';
+
+export async function getStaticPaths() {
+  const works = await getCollection('work');
+  return works.map((w) => ({ params: { slug: w.id }, props: { work: w } }));
+}
+
+const { work } = Astro.props;
+const { Content } = await render(work);
+const d = work.data;
+---
+
+<Detail title={d.title} section="work" description={d.summary}>
+  <p class="back"><a class="text-link muted" href={u('/work')}>← Work</a></p>
+  <h1 class="page-title">{d.title}</h1>
+
+  <dl class="meta">
+    <div><dt>Year</dt><dd>{d.year}</dd></div>
+    <div><dt>Tags</dt><dd>{d.tags.join(' · ')}</dd></div>
+    <div><dt>Role</dt><dd>{d.role}</dd></div>
+  </dl>
+
+  {
+    d.videos.length > 0 && (
+      <div class="videos">
+        {d.videos.map((v) => (
+          <figure class="video">
+            <video
+              src={u(v.src)}
+              poster={v.poster ? u(v.poster) : undefined}
+              controls
+              muted
+              loop
+              playsinline
+              preload="metadata"
+              data-autoplay
+            />
+            {v.caption && <figcaption class="muted">{v.caption}</figcaption>}
+          </figure>
+        ))}
+      </div>
+    )
+  }
+
+  <!-- 문제 → 과정 → 결과 (content/work/<slug>.md 본문) -->
+  {
+    work.body?.trim() && (
+      <article class="prose">
+        <Content />
+      </article>
+    )
+  }
+
+  {d.images.length > 0 && <div class="gallery">
+    {d.images.map((img) => <img src={u(img.src)} alt={img.alt} loading="lazy" decoding="async" width="1600" height="1000" />)}
+  </div>}
+</Detail>
+
+<script>
+  // 영상: 소리 없이, 화면에 보일 때만 반복 재생. '움직임 줄이기' 설정이면 자동 재생하지 않음
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const vids = document.querySelectorAll<HTMLVideoElement>('video[data-autoplay]');
+  if (!reduce && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          const v = e.target as HTMLVideoElement;
+          if (e.isIntersecting) v.play().catch(() => {});
+          else v.pause();
+        }
+      },
+      { threshold: 0.35 },
+    );
+    vids.forEach((v) => io.observe(v));
+  }
+</script>
+
+<style>
+  .back {
+    margin: 0 0 20px;
+    font-size: 13px;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 48px;
+    margin: 0 0 48px;
+    font-size: 14px;
+  }
+
+  .meta dt {
+    font-size: 12px;
+    color: var(--fg-muted);
+    margin-bottom: 4px;
+  }
+
+  .meta dd {
+    margin: 0;
+  }
+
+  .prose {
+    max-width: 68ch;
+    font-size: 15px;
+    line-height: 1.75;
+    margin-bottom: 56px;
+  }
+
+  .prose :global(h2) {
+    margin: 36px 0 10px;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .prose :global(h2:first-child) {
+    margin-top: 0;
+  }
+
+  .prose :global(p) {
+    margin: 0 0 14px;
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .videos {
+    display: grid;
+    gap: 24px;
+    margin: 0 0 56px;
+  }
+
+  .video {
+    margin: 0;
+  }
+
+  .video video {
+    width: 100%;
+    height: auto;
+    max-height: 78vh;
+    display: block;
+    background: #111;
+  }
+
+  .video figcaption {
+    margin-top: 10px;
+    font-size: 13px;
+  }
+
+  .gallery {
+    display: grid;
+    gap: 16px;
+  }
+
+  .gallery img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+</style>

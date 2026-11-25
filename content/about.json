@@ -1,0 +1,72 @@
+{
+  "_note": "About 페이지 내용. links는 GitHub, Google Scholar 등 주소가 생기면 { \"label\": \"GitHub\", \"url\": \"https://...\" } 형식으로 추가.",
+  "name": "Yoonjoo Park",
+  "photo": "/images/about/profile.webp",
+  "photoAlt": "Portrait of Yoonjoo Park",
+  "education": [
+    {
+      "period": "Feb. 2023 – Feb. 2028 (expected)",
+      "school": "DGIST, Daegu, Korea",
+      "detail": "B.S. in Mechanical Engineering & Electrical Engineering"
+    },
+    {
+      "period": "Mar. 2026 – Jun. 2026",
+      "school": "KAIST, Daejeon, Korea",
+      "detail": "Exchange Student, School of Electrical Engineering"
+    },
+    {
+      "period": "Jun. 2023 – Aug. 2023",
+      "school": "University of California, Berkeley, USA",
+      "detail": "Summer Session"
+    }
+  ],
+  "interests": [
+    "Tactile Sensing for Robotics",
+    "Social Touch in Human-Robot Interaction",
+    "Haptic & Tangible Interaction Design"
+  ],
+  "experience": [
+    {
+      "period": "Sep. 2026 – Feb. 2027",
+      "place": "Tactile Sensing and Robotic Skin Group, TU/e, Eindhoven, Netherlands",
+      "detail": "Research Intern. Advisor: Prof. Hyosang Lee"
+    },
+    {
+      "period": "Jun. 2025 – Oct. 2025",
+      "place": "Interactive Robot Lab, DGIST",
+      "detail": "Undergraduate Research Assistant"
+    },
+    {
+      "period": "Oct. 2024 – Dec. 2025",
+      "place": "Advanced Ultrasound Research Laboratory, DGIST",
+      "detail": "Research Intern & Undergraduate Research Assistant"
+    },
+    {
+      "period": "Mar. 2024 – Jun. 2024",
+      "place": "Correlated Matter Spectroscopy Lab, DGIST",
+      "detail": "Undergraduate Research Assistant"
+    }
+  ],
+  "skills": [
+    {
+      "label": "Programming",
+      "items": "Python, MATLAB, C/C++"
+    },
+    {
+      "label": "Robotics & CAD",
+      "items": "ROS2, SolidWorks, Fusion, AutoCAD"
+    },
+    {
+      "label": "Art & Design",
+      "items": "Visual composition and spatial reasoning, trained through design college entrance preparation"
+    }
+  ],
+  "cv": "/cv/cv.pdf",
+  "contact": {
+    "emails": [
+      "yoonjoo2004@dgist.ac.kr",
+      "yoonjoo2004@gmail.com"
+    ],
+    "links": []
+  }
+}
