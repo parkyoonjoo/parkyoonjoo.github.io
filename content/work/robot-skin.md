@@ -1,6 +1,6 @@
 ---
 title: "Robot Skin"
-year: "2025"
+year: "2026"
 tags: ["Engineering"]
 role: "Sensing software for multi-touch and shear detection (Interactive Robot Lab, DGIST)"
 summary: "A magnetic tactile skin that senses multi-touch pressure and shear direction."
